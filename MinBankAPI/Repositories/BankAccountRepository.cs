@@ -25,16 +25,55 @@ namespace MinBankAPI.Repositories
             return await accountsDbContext.BankAccounts.FirstOrDefaultAsync(b => b.accountNumber == accountNumber);
         }
 
-        public async Task<bool> WithdrawalAsync(string accountNumber, decimal amount)
+        public async Task<bool> WithdrawalAsync(string accountNum, decimal amountWithdrawwn)
         {
-            var account = await accountsDbContext.BankAccounts.FirstOrDefaultAsync(b => b.accountNumber == accountNumber);
-            if (account == null || account.AvailableBalance < amount)
-                return false;
+            try
+            {
+                var account = await accountsDbContext.BankAccounts
+                    .FirstOrDefaultAsync(b => b.accountNumber == accountNum);
 
-            account.AvailableBalance -= amount;
-            accountsDbContext.Withdrawals.Add(new WithdrawFromAccount { accountNumber = accountNumber, Amount = amount });
-            await accountsDbContext.SaveChangesAsync();
-            return true;
+                if (account == null)
+                    throw new InvalidOperationException("Account not found.");
+
+                // Condition 1: Withdrawal amount must be greater than 0
+                if (amountWithdrawwn <= 0)
+                    throw new InvalidOperationException("Withdrawal amount must be greater than zero.");
+
+                // Condition 2: Withdrawal amount cannot exceed available balance
+                if (amountWithdrawwn > account.AvailableBalance)
+                    throw new InvalidOperationException("Insufficient balance.");
+
+                // Condition 3: Fixed Deposit accounts must be fully withdrawn
+                if (account.accountType == "Fixed Deposit" && amountWithdrawwn != account.AvailableBalance)
+                    throw new InvalidOperationException("You must withdraw the full balance for a Fixed Deposit account.");
+
+                // Condition 4: Withdrawals are not allowed on inactive accounts
+                if (account.accountStatus == "Inactive")
+                    throw new InvalidOperationException("Withdrawals are not allowed on inactive accounts.");
+
+                // Perform withdrawal
+                account.AvailableBalance -= amountWithdrawwn;
+                accountsDbContext.Withdrawals.Add(new WithdrawFromAccount
+                {
+                    accountNumber = accountNum,
+                    Amount = amountWithdrawwn
+                });
+
+                await accountsDbContext.SaveChangesAsync();
+                return true;
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Known business rule violations
+                Console.WriteLine($"Validation error: {ex.Message}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // Unexpected exception
+                Console.WriteLine($"Unexpected error: {ex.Message}");
+                return false;
+            }
         }
     }
 }
