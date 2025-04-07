@@ -1,11 +1,11 @@
 ﻿using MinBankAPI.Models;
 
-namespace MinBankAPI.Repositories
+namespace MinBankAPI.Interfaces
 {
     public interface IBankAccountRepository
     {
         Task<IEnumerable<BankAccounts>> GetBankAccountsAsync(string accountHolderName);
         Task<BankAccounts> GetBankAccountAsync(string accountNumber);
-        Task<bool> WithdrawalAsync(string accountNumber, decimal amount);
+        Task<(bool success, string message)> WithdrawalAsync(string accountNum, decimal amount);
     }
 }

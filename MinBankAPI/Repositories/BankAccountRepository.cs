@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MinBankAPI.Data;
+using MinBankAPI.Interfaces;
 using MinBankAPI.Models;
 
 namespace MinBankAPI.Repositories
@@ -25,7 +26,7 @@ namespace MinBankAPI.Repositories
             return await accountsDbContext.BankAccounts.FirstOrDefaultAsync(b => b.accountNumber == accountNumber);
         }
 
-        public async Task<bool> WithdrawalAsync(string accountNum, decimal amountWithdrawwn)
+        public async Task<(bool success, string message)> WithdrawalAsync(string accountNum, decimal amountWithdrawwn)
         {
             try
             {
@@ -33,26 +34,26 @@ namespace MinBankAPI.Repositories
                     .FirstOrDefaultAsync(b => b.accountNumber == accountNum);
 
                 if (account == null)
-                    throw new InvalidOperationException("Account not found.");
+                    return (false, "Account not found.");
 
                 // Condition 1: Withdrawal amount must be greater than 0
                 if (amountWithdrawwn <= 0)
-                    throw new InvalidOperationException("Withdrawal amount must be greater than zero.");
+                    return (false, "Withdrawal amount must be greater than zero.");
 
                 // Condition 2: Withdrawal amount cannot exceed available balance
-                if (amountWithdrawwn > account.AvailableBalance)
-                    throw new InvalidOperationException("Insufficient balance.");
+                if (amountWithdrawwn > account.availableBalance)
+                    return (false, "Insufficient balance.");
 
                 // Condition 3: Fixed Deposit accounts must be fully withdrawn
-                if (account.accountType == "Fixed Deposit" && amountWithdrawwn != account.AvailableBalance)
-                    throw new InvalidOperationException("You must withdraw the full balance for a Fixed Deposit account.");
+                if (account.accountType == "Fixed Deposit" && amountWithdrawwn != account.availableBalance)
+                    return (false, "You must withdraw the full balance for a Fixed Deposit account.");
 
                 // Condition 4: Withdrawals are not allowed on inactive accounts
                 if (account.accountStatus == "Inactive")
-                    throw new InvalidOperationException("Withdrawals are not allowed on inactive accounts.");
+                    return (false, "Withdrawals are not allowed on inactive accounts.");
 
                 // Perform withdrawal
-                account.AvailableBalance -= amountWithdrawwn;
+                account.availableBalance -= amountWithdrawwn;
                 accountsDbContext.Withdrawals.Add(new WithdrawFromAccount
                 {
                     accountNumber = accountNum,
@@ -60,19 +61,13 @@ namespace MinBankAPI.Repositories
                 });
 
                 await accountsDbContext.SaveChangesAsync();
-                return true;
-            }
-            catch (InvalidOperationException ex)
-            {
-                // Known business rule violations
-                Console.WriteLine($"Validation error: {ex.Message}");
-                return false;
+                return (true, "Withdrawal successful.");
             }
             catch (Exception ex)
             {
-                // Unexpected exception
+                // Log exception
                 Console.WriteLine($"Unexpected error: {ex.Message}");
-                return false;
+                return (false, "An unexpected error occurred.");
             }
         }
     }

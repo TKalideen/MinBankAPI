@@ -1,12 +1,18 @@
-﻿namespace MinBankAPI.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MinBankAPI.Models
 {
     public class BankAccounts
     {
-        public int Id { get; set; }
+        [Key]
+        public long idNumber { get; set; }
         public string accountNumber { get; set; }
         public string accountType { get; set; } // Cheque, Savings, Fixed Deposit
         public string accountHolderName { get; set; }
+        public string resdentialAddress { get; set; }
+        public string emailAddress { get; set; }
+        public string cellphoneNumber { get; set; }
         public string accountStatus { get; set; } // Active, Inactive
-        public decimal AvailableBalance { get; set; }
+        public decimal availableBalance { get; set; }
     }
 }

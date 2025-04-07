@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MinBankAPI.Interfaces;
 using MinBankAPI.Models;
-using MinBankAPI.Repositories;
 
 namespace MinBankAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class BankAccountsController : Controller
     {
 
@@ -34,16 +36,13 @@ namespace MinBankAPI.Controllers
 
         [HttpPost("withdraw")]
         public async Task<ActionResult> Withdraw([FromBody] WithdrawFromAccount withdrawal)
-        {
-            var success = await _repository.WithdrawalAsync(withdrawal.accountNumber, withdrawal.Amount);
-            if (!success) return BadRequest("Insufficient balance or invalid account.");
-            return Ok("Withdrawal successful.");
-        }
+        {            
+            var (success, message) = await _repository.WithdrawalAsync(withdrawal.accountNumber, withdrawal.Amount);
 
-        // GET: BankAccountsController
-        public ActionResult Index()
-        {
-            return View();
+            if (!success)
+                return BadRequest(message);  
+
+            return Ok(message);  
         }
     }
 }
