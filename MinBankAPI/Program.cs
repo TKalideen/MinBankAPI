@@ -94,7 +94,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "My Bank Accounts V1");
-        c.RoutePrefix = string.Empty;  // Optional: This will serve Swagger UI at the root URL (Ran into issues of the swagger UI not showing)
     });
 }
 
